@@ -1,8 +1,6 @@
 'use strict';
 // import Proton from './Proton';
 
-// const e = React.createElement;
-
 const fps = 120;
 const animInterval = 1000/fps;
 const KEY = {
@@ -16,23 +14,10 @@ const KEY = {
   S: 83,
   SPACE: 32
 };
-// let seg = 7;
-// let ast = 0;
-// let gap = 0.3;
 
 function getBearing(originX, originY, targetX, targetY) {
   return -Math.atan2(targetY-originY, targetX-originX) *360/(Math.PI*2);
 }
-
-// class MainWrapper extends React.Component {
-//   constructor(props) {
-//     super(props);
-//     this.mainRef = React.createRef();
-//   }
-//   render() {
-//     return <OrbitGame ref={this.mainRef} />;
-//   }
-// }
 
 class ErrorBoundary extends React.Component {
   constructor(props) {
@@ -55,7 +40,6 @@ class ErrorBoundary extends React.Component {
       // You can render any custom fallback UI
       return <h1>Something went wrong.</h1>;
     }
-
     return this.props.children;
   }
 }
@@ -120,7 +104,6 @@ class OrbitGame extends React.Component {
     //some things must be stored outside the state??
     this.handlePowerChange = this.handlePowerChange.bind(this);
     this.increasePsi = this.increasePsi.bind(this);
-
     this.handlePauseStart=this.handlePauseStart.bind(this);
     this.handleKeys=this.handleKeys.bind(this);
 
@@ -133,8 +116,6 @@ class OrbitGame extends React.Component {
     createdBodies.push(venus)
     const phobos = new Body(phobosData, mars);
     createdBodies.push(phobos)
-
-
   }
 
   randomMagicNumber = () => {
@@ -153,7 +134,6 @@ class OrbitGame extends React.Component {
     //makes a vector to follow
     let tx = (origin.x - target.x) / this.objectDistance(origin, target);
     let ty = (origin.y - target.y) / this.objectDistance(origin, target);
-    // return [tx, ty];
     return { x: tx, y: ty };
   }
 
@@ -250,10 +230,6 @@ class OrbitGame extends React.Component {
       this.planetCollision(ball, body)
     }
     this.thrustInput();
-    // const bx = this.state.ball.x;
-    // const by = this.state.ball.y;
-    // const vx = this.state.ball.vx;
-    // const vy = this.state.ball.vy;
     this.setState((prevState) => {
       return {
         ball: {
@@ -290,7 +266,6 @@ class OrbitGame extends React.Component {
       if(e.keyCode === KEY.RIGHT  || e.keyCode === KEY.D) { keys.right = value }
       if(e.keyCode === KEY.UP     || e.keyCode === KEY.W) { keys.up    = value }
       if(e.keyCode === KEY.SPACE) keys.space = value;
-      // console.log(e);
       this.setState((prevState) => {
         return {
           keys: keys,
@@ -317,7 +292,6 @@ class OrbitGame extends React.Component {
       this.setState({
         inGame: true,
       });
-      // console.log("ball "+this.state.ball.x);
     }
 
     stopGame() {
@@ -333,18 +307,7 @@ class OrbitGame extends React.Component {
       window.addEventListener('keydown', this.handleKeys.bind(this, true));
       // window.addEventListener('resize',  this.handleResize.bind(this, false));
 
-      // let createdBodies = [];
-      // const sol = new Body(solData);
-      // createdBodies.push(sol)
-      // const mars = new Body(marsData, sol);
-      // createdBodies.push(mars)
-      // const venus = new Body(venusData);
-      // createdBodies.push(venus)
-      // const phobos = new Body(phobosData, mars);
-      // createdBodies.push(phobos)
-
       this.continueGame();
-
     }
 
     componentWillUnMount() {
@@ -354,7 +317,6 @@ class OrbitGame extends React.Component {
 
     update(t) {
       const bodies = this.state.world.bodies
-
       //fps
       let delta = t - this.state.ts;
       if (delta > animInterval) {
@@ -370,12 +332,6 @@ class OrbitGame extends React.Component {
         this.moveBall();
       }
 
-      // this.setState((prevState) => {
-      //   return {
-      //     tick: prevState.tick + 1,
-      //   };
-      // });
-      // console.log("curr tick " + this.state.tick);
       if (this.state.tick < 20000 && this.state.inGame) {
         this.animationID = requestAnimationFrame((t) => {this.update(t)});
       }
@@ -387,7 +343,6 @@ class OrbitGame extends React.Component {
       <Button onClick={this.handlePauseStart} text="Continue" />;
       const magicNumber = <p>{(this.state.magicNumber)}</p>;
       const more = <Button onClick={this.increasePsi} style={{ backgroundColor: 'blue' }} text={`Psi charge: ${this.state.resources.psi}`} />;
-
       const gameState = {
         tick: this.state.tick,
         ts: this.state.ts,
@@ -404,10 +359,8 @@ class OrbitGame extends React.Component {
         <div>
         <ErrorBoundary>
         {readyCanvas}
-
         <UI {...gameState}>
-        {pause}{magicNumber}
-        {more}
+        {pause}{magicNumber}{more}
         </UI>
         </ErrorBoundary>
         </div>
@@ -447,15 +400,12 @@ class OrbitGame extends React.Component {
         this.xPar = this.parent.x
         this.yPar = this.parent.y
       }
-
       this.x = this.xPar + this.orbit * Math.cos(this.angle);
       this.y = this.yPar + this.orbit * Math.sin(this.angle);
     };
   }
 
   const marsData = {
-    // xPar: 400,
-    // yPar: 400,
     size: 12,
     orbit: 100,
     speed: 2,
@@ -507,8 +457,6 @@ class OrbitGame extends React.Component {
     </div>
   );
 
-  //add one event listener to a wrapper div around the UI, listening for targets??
-
   const Button = ({ onClick, text, style }) => (
     <button onClick={onClick} type="button" style={style}>
     {text}
@@ -516,12 +464,10 @@ class OrbitGame extends React.Component {
   );
 
 
-
   //drawing the myCanvas in two stages, idea by Phil Nash https://philna.sh/, elements from Reacteroids
   class GameCanvas extends React.Component {
     constructor(props) {
       super(props);
-      // this.canvasRef = React.createRef();
       this.saveContext = this.saveContext.bind(this);
       this.mouseupHandler = this.mouseupHandler.bind(this);
       this.mousedownHandler = this.mousedownHandler.bind(this);
@@ -548,13 +494,9 @@ class OrbitGame extends React.Component {
       this.emitterList.push(this.createImageEmitter(this.protonCanvas.width / 3, this.protonCanvas.height / 3, '#EE3355', '#0029CC', 8, 5, this.props.world.bodies[1]));
       this.emitterList.push(this.createImageEmitter(this.protonCanvas.width / 2, this.protonCanvas.height / 2, '#EECC53', '#EECC53', 8, 6, this.props.world.bodies[2]));
       this.emitterList.push(this.createImageEmitter(this.protonCanvas.width / 4, this.protonCanvas.height / 4, '#2292FF', '#2292FF', 5, 5, this.props.world.bodies[3], 80, 120));
-
       this.psiEmitter = this.createImageEmitter(this.props.ball.x, this.props.ball.y, '#FFDDFF', '#FFDDFF', 8, 10, this.props.ball, 40, 60, 0.01, 'once', (1,5));
       this.clickEmitter = this.createPointEmitter('#9999FF', '#9999FF', this.props.ball);
-
       this.renderer = new Proton.CanvasRenderer(this.protonCanvas);
-
-
       // this.renderer.onProtonUpdate = function() {
       //   pr.fillStyle = "rgba(0, 0, 0, 0.02)";
       //   pr.fillRect(0, 0, protonCanvas.width, protonCanvas.height);
@@ -571,7 +513,6 @@ class OrbitGame extends React.Component {
         pr.stroke();
         pr.globalAlpha = 1
       };
-
       this.proton.addRenderer(this.renderer);
 
     }
@@ -581,7 +522,6 @@ class OrbitGame extends React.Component {
       emitter.target = target;
       console.log(target);
       emitter.damping = damp;
-
       emitter.rate = new Proton.Rate(new Proton.Span(rate1, rate2));
       // emitter.rate = new Proton.Rate(new Proton.Span(50, 80), new Proton.Span(.1, .5));
       emitter.addInitialize(new Proton.Mass(mass));
@@ -607,9 +547,7 @@ class OrbitGame extends React.Component {
       };
       emitter.p.x = x;
       emitter.p.y = y;
-      // emitter.emit();
       emitter.emit(em);
-      // emitter.emit(5);
       this.proton.addEmitter(emitter);
       console.log(emitter);
       return emitter;
@@ -618,7 +556,6 @@ class OrbitGame extends React.Component {
     createPointEmitter(color1, color2, target=null) {
       var emitter = new Proton.Emitter();
       var emitDirection = getBearing(target.x+target.vx,target.y+target.vy,target.x,target.y);
-      // var emitDirection = getBearing(300,300,target.x,target.y);
       emitter.emitDirection = emitDirection;
       emitter.target = target;
       emitter.damping = 0.015;
@@ -656,12 +593,8 @@ class OrbitGame extends React.Component {
 
     mousedownHandler(e) {
 
-      // this.psiEmitter.emit('once');
       this.clickEmitter.emit('once');
       this.mousedown = true;
-      // console.log(this.clickEmitter.emitDirection);
-      // console.log(this.props.ball);
-      // console.log(this.props.tick);
       for (let a of this.attractionBehaviours) {
         a.reset(this.mouseObj, 25, 600);
       }
@@ -670,9 +603,6 @@ class OrbitGame extends React.Component {
 
     mouseupHandler(e) {
       this.mousedown = false;
-      // if (this.clickEmitter) {
-      //   this.clickEmitter.destroy();
-      // }
       for (let a of this.attractionBehaviours) {
         a.reset(this.mouseObj, 5, 200);
       }
@@ -688,7 +618,6 @@ class OrbitGame extends React.Component {
           _x = e.offsetX;
           _y = e.offsetY;
         }
-
         this.mouseObj.x = _x;
         this.mouseObj.y = _y;
       }
@@ -701,7 +630,6 @@ class OrbitGame extends React.Component {
         y: this.protonCanvas.height / 2
       };
       this.mousedown = false;
-
       this.protonCanvas.addEventListener('mousedown', this.mousedownHandler, false);
       this.protonCanvas.addEventListener('mouseup', this.mouseupHandler, false);
       this.protonCanvas.addEventListener('mousemove', this.mousemoveHandler, false);
@@ -731,7 +659,6 @@ class OrbitGame extends React.Component {
           this.psiEmitter.emit('once')
         }
         this.drawBall();
-
         for (let planet of bodies) {
           this.drawConnect(planet, this.props.ball);
           this.drawPlanet(planet);
@@ -803,9 +730,7 @@ class OrbitGame extends React.Component {
     drawBall() {
       const ball = this.props.ball;
       const {x, y, size, color} = ball;
-      // console.log(ball);
       this.ctx.beginPath();
-      // this.ctx.arc(ox, oy, ballSize, 0, Math.PI * 2);
       this.ctx.arc(x, y, size, 0, Math.PI * 2);
       this.ctx.fillStyle = color;
       this.ctx.fill();
@@ -848,16 +773,6 @@ class OrbitGame extends React.Component {
       this.ctx.strokeStyle = "#E0E0E0";
       this.ctx.stroke();
       this.ctx.closePath();
-      // for (var i=0;i<seg-1;i++) {
-      // this.ctx.arc(this.width/2, this.height/2, r, ((((Math.PI * 2)*(1-gap)*i)+((Math.PI * 2))*i*gap))/seg, ((((Math.PI * 2)*(1-gap)*(i+2))+(Math.PI * 2)*(i+2)*gap)/seg), false);
-      //
-      // }
-      //the planet itself
-      // this.ctx.beginPath();
-      // this.ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-      // this.ctx.fillStyle = "#E0E0E0";
-      // this.ctx.fill();
-      // this.ctx.closePath();
     };
 
 
