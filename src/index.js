@@ -339,7 +339,6 @@ class OrbitGame extends React.Component {
       const pause = this.state.inGame ?
       <Button onClick={this.handlePauseStart} style={{ backgroundColor: 'red' }} text="Pause" /> :
       <Button onClick={this.handlePauseStart} text="Continue" />;
-      const magicNumber = <p>{(this.state.magicNumber)}</p>;
       const more = <Button onClick={this.increasePsi} style={{ backgroundColor: 'blue' }} text={`Psi charge: ${this.state.resources.psi}`} />;
       const gameState = {
         tick: this.state.tick,
@@ -358,7 +357,7 @@ class OrbitGame extends React.Component {
         <ErrorBoundary>
         {readyCanvas}
         <UI {...gameState}>
-        {pause}{magicNumber}{more}
+        {pause}{more}
         </UI>
         </ErrorBoundary>
         </div>
@@ -490,7 +489,7 @@ class OrbitGame extends React.Component {
       this.proton = new Proton;
       // this.emitterList.push(this.createImageEmitter(this.protonCanvas.width / 4, this.protonCanvas.height / 4, '#DD4400', '#EEEEEE', 5, 4, this.props.world.bodies[0]));
       this.emitterList.push(this.createImageEmitter(this.protonCanvas.width / 3, this.protonCanvas.height / 3, '#EE3355', '#0029CC', 8, 5, this.props.world.bodies[1]));
-      this.emitterList.push(this.createImageEmitter(this.protonCanvas.width / 2, this.protonCanvas.height / 2, '#EECC53', '#EECC53', 8, 6, this.props.world.bodies[2]));
+      this.emitterList.push(this.createImageEmitter(this.protonCanvas.width / 2, this.protonCanvas.height / 2, '#EECC53', '#EECC53', 6, 6, this.props.world.bodies[2]));
       this.emitterList.push(this.createImageEmitter(this.protonCanvas.width / 4, this.protonCanvas.height / 4, '#2292FF', '#2292FF', 5, 5, this.props.world.bodies[3], 80, 120));
       this.psiEmitter = this.createImageEmitter(this.props.ball.x, this.props.ball.y, '#FFDDFF', '#FFDDFF', 8, 10, this.props.ball, 40, 60, 0.01, 'once', (1,5));
       this.clickEmitter = this.createPointEmitter('#9999FF', '#9999FF', this.props.ball);
@@ -642,8 +641,9 @@ class OrbitGame extends React.Component {
     componentDidUpdate() {
       const bodies = this.props.world.bodies;
       if (this.props.tick > this.tick) {
-        this.ctx.save();
-        this.ctx.clearRect(0, 0, this.width, this.height);
+        // this.ctx.save();
+        // this.ctx.fillStyle = 'rgba(255, 255, 255, 0.25)';
+        // this.ctx.fillRect(0, 0, this.width, this.height);
         this.updateWorld();
         this.proton.update();
         if (this.psiLevel < this.props.resources.psi && this.psiEmitter) {
@@ -662,7 +662,7 @@ class OrbitGame extends React.Component {
         this.drawLayer(9, (Math.PI*2)*0.003*this.tick, 0.3, 270);
         this.drawLayer(5, (Math.PI*2)*0.005*this.tick, 0.4, 125);
         this.drawScore();
-        this.ctx.restore();
+        // this.ctx.restore();
         this.tick = this.props.tick;
       }
     }
@@ -688,19 +688,19 @@ class OrbitGame extends React.Component {
       }
     }
 
-    drawSquare() {
-      const angle = this.props.magicNumber;
-      this.ctx.beginPath();
-      this.ctx.translate(this.width / 2, this.height / 2);
-      this.ctx.rotate((angle * Math.PI) / 180);
-      this.ctx.fillStyle = '#4397AC';
-      this.ctx.fillRect(
-        -this.width / 4,
-        -this.height / 4,
-        this.width / 2,
-        this.height / 2
-      );
-    }
+    // drawSquare() {
+    //   const angle = this.props.magicNumber;
+    //   this.ctx.beginPath();
+    //   this.ctx.translate(this.width / 2, this.height / 2);
+    //   this.ctx.rotate((angle * Math.PI) / 180);
+    //   this.ctx.fillStyle = '#4397AC';
+    //   this.ctx.fillRect(
+    //     -this.width / 4,
+    //     -this.height / 4,
+    //     this.width / 2,
+    //     this.height / 2
+    //   );
+    // }
 
 
     drawConnect(origin, target) {
@@ -708,17 +708,21 @@ class OrbitGame extends React.Component {
       this.ctx.globalAlpha = 0.5
       this.ctx.strokeStyle = '#4397DC';
       this.ctx.lineWidth = 1;
+      this.ctx.setLineDash([40, 15]);
+      this.ctx.lineDashOffset = 20
       this.ctx.moveTo(origin.x, origin.y);
-      this.ctx.lineTo(origin.x+(target.x-origin.x)*2/12, origin.y+(target.y-origin.y)*2/12);
-      this.ctx.moveTo(origin.x+(target.x-origin.x)*3/12, origin.y+(target.y-origin.y)*3/12);
-      this.ctx.lineTo(origin.x+(target.x-origin.x)*5/12, origin.y+(target.y-origin.y)*5/12);
-      this.ctx.moveTo(origin.x+(target.x-origin.x)*6/12, origin.y+(target.y-origin.y)*6/12);
-      this.ctx.lineTo(origin.x+(target.x-origin.x)*8/12, origin.y+(target.y-origin.y)*8/12);
-      this.ctx.moveTo(origin.x+(target.x-origin.x)*9/12, origin.y+(target.y-origin.y)*9/12);
-      this.ctx.lineTo(origin.x+(target.x-origin.x)*11/12, origin.y+(target.y-origin.y)*11/12);
+      this.ctx.lineTo(target.x, target.y);
+      // this.ctx.lineTo(origin.x+(target.x-origin.x)*2/12, origin.y+(target.y-origin.y)*2/12);
+      // this.ctx.moveTo(origin.x+(target.x-origin.x)*3/12, origin.y+(target.y-origin.y)*3/12);
+      // this.ctx.lineTo(origin.x+(target.x-origin.x)*5/12, origin.y+(target.y-origin.y)*5/12);
+      // this.ctx.moveTo(origin.x+(target.x-origin.x)*6/12, origin.y+(target.y-origin.y)*6/12);
+      // this.ctx.lineTo(origin.x+(target.x-origin.x)*8/12, origin.y+(target.y-origin.y)*8/12);
+      // this.ctx.moveTo(origin.x+(target.x-origin.x)*9/12, origin.y+(target.y-origin.y)*9/12);
+      // this.ctx.lineTo(origin.x+(target.x-origin.x)*11/12, origin.y+(target.y-origin.y)*11/12);
 
       this.ctx.closePath();
       this.ctx.stroke();
+      this.ctx.setLineDash([])
       this.ctx.globalAlpha = 1
     }
 
@@ -777,8 +781,8 @@ class OrbitGame extends React.Component {
 
     render() {
       return (
-       <PureCanvas width={this.props.screen.width} height={this.props.screen.height} contextRef={this.saveContext} />
-       )
+        <PureCanvas width={this.props.screen.width} height={this.props.screen.height} contextRef={this.saveContext} />
+      )
     }
   }
 
