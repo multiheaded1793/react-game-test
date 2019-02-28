@@ -1,7 +1,7 @@
 'use strict';
 // import Proton from './Proton';
 
-const fps = 120;
+const fps = 200;
 const animInterval = 1000/fps;
 const KEY = {
   LEFT:  37,
@@ -127,8 +127,6 @@ class OrbitGame extends React.Component {
   objectDistance(b1, b2) {
     return Math.sqrt(Math.pow(b1.x-b2.x, 2) + Math.pow(b1.y-b2.y, 2));;
   }
-
-
 
   towardsBody(origin, target) {
     //makes a vector to follow
@@ -332,7 +330,7 @@ class OrbitGame extends React.Component {
         this.moveBall();
       }
 
-      if (this.state.tick < 20000 && this.state.inGame) {
+      if (this.state.tick < 100000 && this.state.inGame) {
         this.animationID = requestAnimationFrame((t) => {this.update(t)});
       }
     }
@@ -561,7 +559,6 @@ class OrbitGame extends React.Component {
       emitter.damping = 0.015;
       emitter.rate = new Proton.Rate(new Proton.Span(20, 80), .3);
       emitter.addInitialize(new Proton.Mass(4));
-
       emitter.addInitialize(new Proton.Radius(15));
       emitter.addInitialize(new Proton.Velocity(new Proton.Span(3,5), new Proton.Span(emitDirection-15, emitDirection+15), 'polar'));
       // if (target.vx && target.vy) {
@@ -637,7 +634,6 @@ class OrbitGame extends React.Component {
     }
 
     componentDidMount() {
-      console.log(this);
       //proton
       this.initProton();
 
@@ -650,7 +646,6 @@ class OrbitGame extends React.Component {
         this.ctx.clearRect(0, 0, this.width, this.height);
         this.updateWorld();
         this.proton.update();
-
         if (this.psiLevel < this.props.resources.psi && this.psiEmitter) {
           this.psiLevel++;
           this.psiEmitter.rate = this.psiLevel < 9 ?
@@ -658,11 +653,11 @@ class OrbitGame extends React.Component {
           new Proton.Rate(new Proton.Span(150, 180), 4)
           this.psiEmitter.emit('once')
         }
-        this.drawBall();
         for (let planet of bodies) {
           this.drawConnect(planet, this.props.ball);
           this.drawPlanet(planet);
         }
+        this.drawBall();
         this.drawLayer(7, (Math.PI*2)*0.008*this.tick, 0.3, 240);
         this.drawLayer(9, (Math.PI*2)*0.003*this.tick, 0.3, 270);
         this.drawLayer(5, (Math.PI*2)*0.005*this.tick, 0.4, 125);
@@ -714,7 +709,14 @@ class OrbitGame extends React.Component {
       this.ctx.strokeStyle = '#4397DC';
       this.ctx.lineWidth = 1;
       this.ctx.moveTo(origin.x, origin.y);
-      this.ctx.lineTo(target.x, target.y);
+      this.ctx.lineTo(origin.x+(target.x-origin.x)*2/12, origin.y+(target.y-origin.y)*2/12);
+      this.ctx.moveTo(origin.x+(target.x-origin.x)*3/12, origin.y+(target.y-origin.y)*3/12);
+      this.ctx.lineTo(origin.x+(target.x-origin.x)*5/12, origin.y+(target.y-origin.y)*5/12);
+      this.ctx.moveTo(origin.x+(target.x-origin.x)*6/12, origin.y+(target.y-origin.y)*6/12);
+      this.ctx.lineTo(origin.x+(target.x-origin.x)*8/12, origin.y+(target.y-origin.y)*8/12);
+      this.ctx.moveTo(origin.x+(target.x-origin.x)*9/12, origin.y+(target.y-origin.y)*9/12);
+      this.ctx.lineTo(origin.x+(target.x-origin.x)*11/12, origin.y+(target.y-origin.y)*11/12);
+
       this.ctx.closePath();
       this.ctx.stroke();
       this.ctx.globalAlpha = 1
@@ -765,8 +767,6 @@ class OrbitGame extends React.Component {
       }
     }
     drawSegment(seg, ast, gap, r) {
-      //outlines the orbit
-
       this.ctx.beginPath();
       this.ctx.arc(this.width/2, this.height/2, r, ast/seg, (((Math.PI*2)*(1-gap))/seg)+ast/seg, false);
       this.ctx.lineWidth = 10;
@@ -775,22 +775,11 @@ class OrbitGame extends React.Component {
       this.ctx.closePath();
     };
 
-
-
-
     render() {
-      return <PureCanvas width={`${this.props.screen.width}`} height={`${this.props.screen.height}`} contextRef={this.saveContext} />;
+      return (
+       <PureCanvas width={this.props.screen.width} height={this.props.screen.height} contextRef={this.saveContext} />
+       )
     }
-    //optionally trying direct render instead
-    // render() {
-    //   return (
-    //     <canvas id="myCanvas"
-    //     width={`${this.props.screen.width}`} height={`${this.props.screen.height}`}
-    //     ref="canvas"
-    //     />
-    //   );
-    // };
-
   }
 
   class PureCanvas extends React.Component {
