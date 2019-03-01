@@ -44,7 +44,7 @@ ul {
 
 canvas {
   display: block;
-  background: #2d4d82;
+  background: #2d3c5a;
   margin: 1em 0 0 1em;
 }
 
@@ -56,8 +56,8 @@ button {
   text-align: center;
   text-decoration: none;
   display: inline-block;
-  font-size: 12px;
-  border-radius: 4px;
+  font-size: 14px;
+  border-radius: 5px;
   transition-duration: 0.4s;
   margin: 0.2em;
 }
