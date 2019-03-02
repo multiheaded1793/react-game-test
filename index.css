@@ -38,8 +38,12 @@ ul {
   margin: 0;
 }
 
-#game-wrapper {
+.structure {
   margin: 0.5em;
+}
+
+#game-wrapper {
+  margin: 0em;
 }
 
 canvas {
@@ -69,34 +73,36 @@ button:hover {
 
 .showcase {
   position: relative;
-  overflow: hidden;
+  /* overflow: hidden; */
   display: flex;
   flex-flow: row wrap;
-  justify-content: center;
+  justify-content: flex-start;
   align-items: flex-start;
   align-content: flex-start;
-  width: 100%;
-  text-align: center;
-  font-size: 1.3em;
-  min-height: 18em;
-  margin: 0.5em 0 1.5em;
-  transition-property: opacity;
-  transition-duration: 1s;
+  /* width: 100%; */
+  /* text-align: center; */
+  /* min-height: 18em; */
+  margin: 0.5em 1em 1.5em;
+  transition-property: all;
+  transition-duration: 0.5s;
   transition-timing-function: ease-out;
   z-index: 0;
 }
 
 .game-interface {
+  font-weight: 300;
+  font-size: 1em;
   display: flex;
   flex-flow: column nowrap;
   align-items: center;
   justify-content: flex-start;
-  margin: 0;
+  /* margin: 0em 1em 0.5em; */
+  padding: 1em 0.5em;
 }
 
 .interface-element {
   display: flex;
-  flex-flow: column nowrap;
+  flex-flow: row wrap;
   align-items: center;
   justify-content: center;
   padding: 0 0.5em;
