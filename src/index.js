@@ -2,7 +2,7 @@
 // import Proton from './Proton';
 
 //global constants
-const fps = 75;
+const fps = 120;
 const animInterval = 1000/fps;
 const KEY = {
   LEFT:  37,
@@ -71,9 +71,9 @@ class OrbitGame extends React.Component {
         bounceDampening: 0.9,
       },
       ball: {
-        x: 100,
-        y: 150,
-        vx: 0,
+        x: 190,
+        y: 210,
+        vx: 0.5,
         vy: 0.5,
         size: 6,
         mass: 3,
@@ -81,6 +81,8 @@ class OrbitGame extends React.Component {
         thrustAcc: 0.1,
         heading: 0,
         power: 0,
+        coll: false,
+        ct: 0,
         color: "#E0EDFF",
         glow: 1,
       },
@@ -137,13 +139,12 @@ class OrbitGame extends React.Component {
     createdBodies.push(saturn);
 
     let createdStructures = this.state.world.structures;
-    const s1 = new ringStructure({numSeg: 5, gap: 0.3, radius: 190, speed: 1, origin: {x: 350, y: 350}, width: 20, hue: "#DF73FF"})
+    const s1 = new ringStructure({numSeg: 5, gap: 0.35, radius: 190, speed: 0.4, origin: {x: 350, y: 350}, width: 15, hue: "#DF73FF"})
     s1.addSegments();
     s1.destroyRandom();
     // s1.destroySegment(s1.segments[1]);
-    // s1.destroySegment(s1.segments[1]);
     createdStructures.push(s1);
-    const s2 = new ringStructure({numSeg: 15, gap: 0.2, radius: 320, speed: 0.7, origin: {x: 350, y: 350}, width: 12, hue: "#FFE4E1"})
+    const s2 = new ringStructure({numSeg: 12, gap: 0.4, radius: 320, speed: 0.7, origin: {x: 350, y: 350}, width: 12, hue: "#FFE4E1"})
     s2.addSegments();
     s2.destroyRandom();
     s2.destroyRandom();
@@ -164,7 +165,6 @@ class OrbitGame extends React.Component {
   planetCollision(origin, body, type) {
     if (objectDistance(origin, body)*0.9 < body.size + origin.size) {
       //need to calculate accel here
-      // console.log(this.state.world.bodies.indexOf(body));
       if (type === 1) {
         this.setState((prevState) => {
           return {
@@ -180,7 +180,6 @@ class OrbitGame extends React.Component {
         });
       }
       if (type === 2) {
-        // console.log(`Crash! ${origin.name}/${body.name}`)
         this.setState((prevState) => {
           let newBodies = prevState.world.bodies;
           let b = newBodies[newBodies.indexOf(body)];
@@ -191,11 +190,11 @@ class OrbitGame extends React.Component {
             o.coll += 2;
           }
           // if (b.speed) {
-            // b.x -= towardsBody(body, origin).x*5*o.mass/b.mass;
-            // b.y -= towardsBody(body, origin).y*5*o.mass/b.mass;
-            // b.dx += towardsBody(body, origin).x*(b.coll*b.size/10)*o.mass/b.mass;
-            // b.dy += towardsBody(body, origin).y*(b.coll*b.size/10)*o.mass/b.mass;
-            // b.coll += 2;
+          // b.x -= towardsBody(body, origin).x*5*o.mass/b.mass;
+          // b.y -= towardsBody(body, origin).y*5*o.mass/b.mass;
+          // b.dx += towardsBody(body, origin).x*(b.coll*b.size/10)*o.mass/b.mass;
+          // b.dy += towardsBody(body, origin).y*(b.coll*b.size/10)*o.mass/b.mass;
+          // b.coll += 2;
           // }
           return {
             resources: {
@@ -279,36 +278,61 @@ class OrbitGame extends React.Component {
 
   structureCollision() {
     let ball = this.state.ball;
-    // let angle = ((Victor(ball.x-350, ball.y-350).angle()+(Math.PI*6/2))%Math.PI).toFixed(3);
-    let angle = (Victor(ball.x-350, ball.y-350).verticalAngle()).toFixed(3);
+    let angle = (Victor(ball.x-this.props.width/2, ball.y-this.props.height/2).horizontalAngle()+Math.PI*3)%(Math.PI*2)+Math.PI;
     for (let struct of this.state.world.structures) {
-      if (objectDistance(ball,struct.origin) > struct.radius*0.95 && objectDistance(ball,struct.origin) < struct.radius*1.05) {
+      if (objectDistance(ball,struct.origin) > struct.radius-struct.width/2-ball.size && objectDistance(ball,struct.origin) < struct.radius+struct.width/2+ball.size) {
         for (let seg of struct.segments) {
-          if (seg.bc > seg.ac && angle > seg.ac && angle < seg.bc) {
-            console.log("A");
+          let arcLength = (seg.bc-seg.ac+(Math.PI*3))%(Math.PI*2)-Math.PI;
+          let angleDiff = (angle-seg.ac+(Math.PI*3))%(Math.PI*2)-Math.PI;
+          if (seg.health>0&&(angleDiff>0 && angleDiff<arcLength)||(angleDiff<0 && angleDiff>Math.PI-arcLength)) {
+            // console.log(angle);
+            // console.log(struct);
+            // console.log("diff "+angleDiff);
+            seg.health--;
             this.setState((prevState) => {
+              if (!ball.coll) {
               return {
                 ball: {
                   ...prevState.ball,
+                  coll: true,
                   vx: -prevState.ball.vx * prevState.params.bounceDampening,
                   vy: -prevState.ball.vy * prevState.params.bounceDampening,
+                  ct: 1,
+                  }
                 }
+              } else {
+                return {
+                  ball: {
+                    ...prevState.ball,
+                    vx: prevState.ball.vx*(1+(prevState.ball.ct/10)),
+                    vy: prevState.ball.vy*(1+(prevState.ball.ct/10)),
+                    ct: prevState.ball.ct+1,
+                    }
+                  }
               }
             });
-          }
-          else if (seg.ac > seg.bc && (angle<seg.ac||angle>seg.bc)) {
-            console.log("B");
+          } else if (ball.coll) {
             this.setState((prevState) => {
               return {
                 ball: {
                   ...prevState.ball,
-                  vx: -prevState.ball.vx * prevState.params.bounceDampening,
-                  vy: -prevState.ball.vy * prevState.params.bounceDampening,
-                }
+                  coll: false,
+                  ct: 0,
+                },
               }
             });
           }
         }
+      } else {
+        this.setState((prevState) => {
+          return {
+            ball: {
+              ...prevState.ball,
+              coll: false,
+              ct: 0,
+            },
+          }
+        });
       }
     }
   }
@@ -318,7 +342,7 @@ class OrbitGame extends React.Component {
     //apply a pulling force, costs energy
     if (this.state.mousedown && this.state.resources.energy > 0 && this.state.mouseTick%1==0) {
       for (let planet of bodies) {
-        planet.getsPulled(15, this.state.mouseObj, this.state.mouseTick)
+        planet.getsPulled(12, this.state.mouseObj, this.state.mouseTick)
       }
       this.setState((prevState) => {
         return {
@@ -349,7 +373,7 @@ class OrbitGame extends React.Component {
     for (let body of bodies) {
       this.planetCollision(ball, body, 1)
     }
-    // this.structureCollision();
+    this.structureCollision();
     this.thrustInput();
     const speed = objectDistance(ball, {x: ball.vx, y:ball.vy});
     this.setState((prevState) => {
@@ -401,13 +425,10 @@ class OrbitGame extends React.Component {
 
   mousedownHandler(e) {
     this.mousemoveHandler(e);
-
-    // console.log(this.state.world.structures[0].segments[1])
-    // console.log(this.state.world.structures[0].segments[2])
     this.setState((prevState) => {
       return {
         mousedown: true,
-       }
+      }
     });
     if (!this.state.mouseObj.init) {
       this.setState((prevState) => {
@@ -416,11 +437,10 @@ class OrbitGame extends React.Component {
             ...prevState.mouseObj,
             init: true,
           }
-         }
+        }
       });
     }
-    console.log((Victor(this.state.mouseObj.x-350, this.state.mouseObj.y-350).angle()+(Math.PI*6/2))%Math.PI)
-    console.log(this.state.world.structures[0].segments[0])
+    // console.log(this.state.ball)
   }
 
   mouseupHandler(e) {
@@ -535,7 +555,7 @@ class OrbitGame extends React.Component {
     const pullbutton = <Button onClick={this.handlePowerChange} style={{ backgroundColor: '#E0115F' }} text={`Energy: ${this.state.resources.energy} (click to charge)`} />;
 
     return (
-      <div className="showcase">
+      <div className="showcase"><ErrorBoundary>
       {readyCanvas}
       <GUIWrap ui={ui}>
       <StatsDisplay ui={ui} />
@@ -543,6 +563,7 @@ class OrbitGame extends React.Component {
       {pause}{sparklebutton}{pullbutton}
       </ButtonBlock>
       </GUIWrap>
+      </ErrorBoundary>
       </div>
     );
   }
@@ -596,8 +617,6 @@ class Body {
         x: this.xPar + this.pfdist.x,
         y: this.yPar + this.pfdist.y,
       }
-
-      console.log(this.pf);
       this.per = this.orbitX-this.orbitX*this.e;
       this.aph = this.orbitX+this.orbitX*this.e;
     }
@@ -620,7 +639,6 @@ class Body {
     let dist = objectDistance(this, target);
     let fade = 1+(tick*0.05)
     this.speedWarp = (force*200/this.mass)/(Math.pow(dist * 0.5, 1.1)*fade);
-    // console.log(this.speedWarp);
     if (dist > this.size*1.2)  {
       this.dx -= force*towardsBody(this, target).x/(Math.pow(dist * 0.04, 1.1)*fade);
       this.dy -= force*towardsBody(this, target).y/(Math.pow(dist * 0.04, 1.1)*fade);
@@ -629,7 +647,9 @@ class Body {
 
   // Adding a method to the constructor
   movePlanet() {
-    this.angle += Math.acos(1 - Math.pow((this.speed/(1+this.speedWarp)) / this.orbitX, 2) / 2);
+    this.angle += this.orbitX===this.orbitY ?
+    Math.acos(1 - Math.pow((this.speed/(1+this.speedWarp)) / this.orbitX, 2) / 2)%Math.PI*2 :
+    Math.acos(1 - Math.pow((this.speed*(1+this.e*Math.cos(this.angle))/(1+this.speedWarp)) / this.orbitX, 2) / 2)%Math.PI*2;
 
     if (this.parent) {
       this.xPar = this.parent.x;
@@ -650,10 +670,10 @@ class Body {
       this.y = this.yPar + el.y + this.dy;
     }
     if (this.dx) {
-      this.dx = Math.floor(this.dx*0.98)
+      this.dx = Math.floor(this.dx*0.97)
     }
     if (this.dy) {
-      this.dy = Math.floor(this.dy*0.98)
+      this.dy = Math.floor(this.dy*0.97)
     }
     if (this.speedWarp) {
       this.speedWarp = Math.floor(this.speedWarp*0.75)
@@ -666,10 +686,10 @@ class Body {
 
 const marsData = {
   size: 9,
-  orbitX: 240,
-  orbitY: 235,
-  rot: 60,
-  speed: 2,
+  orbitX: 180,
+  orbitY: 150,
+  rot: 200,
+  speed: 1.5,
   mass: 100,
   hue: "#ff4336",
   glow: 0.8,
@@ -678,8 +698,10 @@ const marsData = {
 }
 
 const phobosData = {
-  size: 7,
-  orbitX: 40,
+  size: 6,
+  orbitX: 33,
+  orbitY: 31,
+  rot: 100,
   speed: 1.5,
   mass: 50,
   hue: "#EE1111",
@@ -691,8 +713,10 @@ const phobosData = {
 const venusData = {
   // xPar: 350,
   // yPar: 350,
-  size: 15,
-  orbitX: 90,
+  size: 12,
+  orbitX: 70,
+  orbitY: 65,
+  rot: 210,
   speed: 1,
   mass: 160,
   hue: "#00A86B",
@@ -702,8 +726,10 @@ const venusData = {
 }
 
 const earthData = {
-  size: 12,
-  orbitX: 145,
+  size: 11,
+  orbitX: 125,
+  orbitY: 120,
+  rot: 15,
   speed: 1,
   mass: 140,
   hue: "#007FFF",
@@ -724,8 +750,8 @@ const solData = {
 }
 
 const saturnData = {
-  size: 15,
-  orbitX: 320,
+  size: 14,
+  orbitX: 310,
   speed: 0.5,
   mass: 180,
   hue: "#d9b47d",
@@ -790,9 +816,12 @@ class ringStructure {
   moveSegments() {
     for (let seg of this.segments) {
       seg.a += Math.PI*2*0.001*this.speed;
-      seg.ac = seg.a%(Math.PI);
+      seg.ac = (Math.abs(seg.a)+Math.PI*2)%(Math.PI*2);
       seg.b += Math.PI*2*0.001*this.speed;
-      seg.bc = seg.b%(Math.PI);
+      seg.bc = (Math.abs(seg.b)+Math.PI*2)%(Math.PI*2);
+      if (seg.health<3 && seg.a.toFixed(5)%(Math.PI.toFixed(5)*2*0.1)<0.01) {
+        seg.health++;
+      }
     }
   }
 }
@@ -842,22 +871,25 @@ class GameCanvas extends React.Component {
     // const rectZone = new Proton.RectZone(rect2.x, rect2.y, rect2.width, rect2.height);
     // const zones = this.state.zones;
     // this.emitterList[0].addBehaviour(this.customToZoneBehaviour(zones[0], zones[1], zones[2]));
-    this.crossZoneBehaviour = new Proton.CrossZone(new Proton.RectZone(0, 0, this.protonCanvas.width, this.protonCanvas.height), 'bound');
+    this.borderZoneBehaviour = new Proton.CrossZone(new Proton.RectZone(0, 0, this.protonCanvas.width, this.protonCanvas.height), 'bound');
+    this.centerZone = new Proton.RectZone(this.width/2, this.height/2, this.props.world.bodies[0].size);
+    // this.centerBehaviour = new Proton.CrossZone(this.centerZone, 'bound');
+    this.centerBehaviour = new Proton.Repulsion(this.centerZone, 10, 30)
     this.randomBehaviour = new Proton.RandomDrift(5, 5, .05);
     // const gravityWellBehaviour = new Proton.GravityWell({
     //   x: this.protonCanvas.width / 2,
     //   y: this.protonCanvas.height / 2
     // }, 0, 0);
 
+    const bodies = this.props.world.bodies;
+    this.emitterList.push(this.createImageEmitter(bodies[1], '#EE3355', '#0029CC', 3, 1));
+    this.emitterList.push(this.createImageEmitter(bodies[2], '#88FF99', '#EEBB35', 4, 1.25, 10, 2));
+    this.emitterList.push(this.createImageEmitter(bodies[3], '#2292FF', '#2292FF', 3, 1.25, 25, 5));
+    this.emitterList.push(this.createImageEmitter(bodies[4], '#FF2211', '#EEEEEE', 4, 1.25, 80, 200));
+    this.emitterList.push(this.createImageEmitter(bodies[5], '#EEEEEE', '#EEEEEE', 2, 1, 100, 120));
 
-    this.emitterList.push(this.createImageEmitter(this.protonCanvas.width / 3, this.protonCanvas.height / 3, '#EE3355', '#0029CC', 6, 5, this.props.world.bodies[1]));
-    this.emitterList.push(this.createImageEmitter(this.protonCanvas.width / 2, this.protonCanvas.height / 2, '#88FF99', '#EEBB35', 5, 5, this.props.world.bodies[2]), 150, 200, 0.009, 2, 3);
-    this.emitterList.push(this.createImageEmitter(this.protonCanvas.width / 4, this.protonCanvas.height / 4, '#2292FF', '#2292FF', 5, 5, this.props.world.bodies[3], 80, 120));
-    this.emitterList.push(this.createImageEmitter(this.protonCanvas.width / 3, this.protonCanvas.height / 4, '#FF2211', '#EEEEEE', 4, 10, this.props.world.bodies[4], 80, 100));
-    this.emitterList.push(this.createImageEmitter(this.protonCanvas.width / 2, this.protonCanvas.height / 3, '#DD4400', '#EEEEEE', 5, 5, this.props.world.bodies[5], 100, 120));
-
-    this.psiEmitter = this.createImageEmitter(this.props.ball.x, this.props.ball.y, '#FF4433', '#FFDDFF', 8, 10, this.props.ball, 40, 60, 0.01, 'once', (1,5));
-    this.clickEmitter = this.createPointEmitter('#FF6FFF', '#FD1212', this.props.mouseObj);
+    this.psiEmitter = this.createImageEmitter(this.props.ball, '#FF4433', '#FFDDFF', 7, 1, 40, 60, 0.05, 'once', (1,5));
+    this.clickEmitter = this.createPointEmitter('#FF6FFF', '#FD1212', this.props.ball);
     this.renderer = new Proton.CanvasRenderer(this.protonCanvas);
 
     // this.renderer.onProtonUpdate = function() {
@@ -865,47 +897,57 @@ class GameCanvas extends React.Component {
     //   this.ctx.fillRect(0, 0, protonCanvas.width, protonCanvas.height);
     // };
     this.renderer.onParticleUpdate = (particle) => {
+      this.ctx.globalAlpha = 0.9;
+      // if (particle.radius>1) {
+      //   this.renderer.drawCircle(particle);
+      // }
       this.ctx.beginPath();
-      this.ctx.globalAlpha = 0.9
       this.ctx.strokeStyle = particle.color;
-      this.ctx.lineWidth = particle.radius/5;
-      this.ctx.moveTo(particle.old.p.x, particle.old.p.y);
+      this.ctx.lineWidth = particle.energy*2;
+      this.ctx.moveTo(particle.old.p.x-particle.old.a.x*15, particle.old.p.y-particle.old.a.y*15);
       this.ctx.lineTo(particle.p.x, particle.p.y);
       this.ctx.closePath();
       this.ctx.stroke();
+
       this.ctx.globalAlpha = 1
     };
     this.proton.addRenderer(this.renderer);
   }
 
-  createImageEmitter(x, y, color1=null, color2=null, mass=5, radius=5, target=null, rate1=100, rate2=200, damp=0.005, em='once', life=null) {
+  createImageEmitter(target=null, color1=null, color2=null, mass=5, radius=1, rate1=100, rate2=1, damp=0.005, em='once', life=null) {
     var emitter = new Proton.Emitter();
     emitter.target = target;
-    // console.log(target);
+    emitter.emitDirection = Victor(target.x-this.protonCanvas.width/2, target.y-this.protonCanvas.height/2).verticalAngleDeg();
     emitter.damping = damp;
-    emitter.rate = new Proton.Rate(new Proton.Span(rate1, rate2));
+    emitter.rate = new Proton.Rate(new Proton.Span(rate1, rate1*1.5), rate2);
+    // emitter.addInitialize(emitter.rate);
     // emitter.rate = new Proton.Rate(new Proton.Span(50, 80), new Proton.Span(.1, .5));
     emitter.addInitialize(new Proton.Mass(mass));
     emitter.addInitialize(new Proton.Radius(radius));
     if (life) {
       emitter.addInitialize(new Proton.Life(life));
     }
-    emitter.addInitialize(new Proton.Velocity(new Proton.Span(2,4), new Proton.Span(0, 360), 'polar'));
+    emitter.currVelocity = new Proton.Velocity(new Proton.Span(3,5), new Proton.Span(0, 360), 'polar');
+    emitter.addInitialize(emitter.currVelocity);
     emitter.addBehaviour(this.randomBehaviour);
     color1 && color2 ?
     emitter.addBehaviour(new Proton.Color(color1, color2)) :
     emitter.addBehaviour(new Proton.Color('random'));
     // emitter.addBehaviour(new Proton.Scale(3.5, 0.5));
-    emitter.addBehaviour(this.crossZoneBehaviour);
+    emitter.addBehaviour(this.borderZoneBehaviour);
+    emitter.addBehaviour(this.centerBehaviour);
     emitter.mouseAttract = new Proton.Attraction(this.mouseObj, 5, 200);
     emitter.addBehaviour(emitter.mouseAttract);
-    // this.attractionBehaviours.push(mouseAttract);
     if (target) {
       emitter.planetAttraction = new Proton.Attraction(target, 10, 500);
       emitter.addBehaviour(emitter.planetAttraction);
+      emitter.p.x = target.x;
+      emitter.p.y = target.y;
     };
-    emitter.p.x = x;
-    emitter.p.y = y;
+    if (!target) {
+      emitter.p.x = this.protonCanvas.width/2;
+      emitter.p.y = this.protonCanvas.height/2;
+    };
     emitter.emit(em);
     this.proton.addEmitter(emitter);
     console.log(emitter);
@@ -914,25 +956,28 @@ class GameCanvas extends React.Component {
 
   createPointEmitter(color1, color2, target=null) {
     var emitter = new Proton.Emitter();
-    var emitDirection = getBearing(target.x+target.vx,target.y+target.vy,target.x,target.y);
-    emitter.emitDirection = emitDirection;
+    emitter.emitDirection  = Victor(target.x-this.protonCanvas.width/2, target.y-this.protonCanvas.height/2).verticalAngleDeg();
     emitter.target = target;
-    emitter.damping = 0.015;
-    emitter.rate = new Proton.Rate(new Proton.Span(20, 80), .3);
-    emitter.addInitialize(new Proton.Mass(4));
-    emitter.addInitialize(new Proton.Life(new Proton.Span(3,5)))
-    emitter.addInitialize(new Proton.Radius(15));
-    emitter.addInitialize(new Proton.Velocity(new Proton.Span(3,5), new Proton.Span(emitDirection-15, emitDirection+15), 'polar'));
+    emitter.damping = 0.005;
+    emitter.rate = new Proton.Rate(new Proton.Span(20, 30), .01);
+    emitter.addInitialize(emitter.rate);
+    emitter.addInitialize(new Proton.Mass(3));
+    emitter.addInitialize(new Proton.Life(new Proton.Span(4,6)))
+    emitter.addInitialize(new Proton.Radius(1));
+    emitter.currVelocity = new Proton.Velocity(new Proton.Span(2,3), new Proton.Span(0, 360), 'polar');
+    // emitter.currVelocity = new Proton.Velocity(new Proton.Span(5,6), new Proton.Span(emitter.emitDirection-15, emitter.emitDirection+15), 'polar');
+    emitter.addInitialize(emitter.currVelocity);
     // if (target.vx && target.vy) {
     //   emitter.addInitialize(new Proton.Force(target.vx*120, target.vy*120))
     // }
     emitter.addBehaviour(this.randomBehaviour);
     emitter.addBehaviour(new Proton.Color(color1, color2));
-    emitter.addBehaviour(this.crossZoneBehaviour);
-    emitter.pointAttraction = new Proton.Attraction(target, 10, 400);
+    emitter.addBehaviour(this.borderZoneBehaviour);
+    emitter.addBehaviour(this.centerBehaviour);
+    emitter.pointAttraction = new Proton.Attraction(this.props.ball, 10, 500);
     emitter.addBehaviour(emitter.pointAttraction);
-    emitter.p.x = target.x;
-    emitter.p.y = target.y;
+    emitter.p.x = this.props.mouseObj.x;
+    emitter.p.y = this.props.mouseObj.y;
     emitter.emit('once');
     this.proton.addEmitter(emitter);
     return emitter;
@@ -947,9 +992,9 @@ class GameCanvas extends React.Component {
       if (this.psiLevel < this.props.resources.psi && this.psiEmitter) {
         this.psiLevel++;
         this.psiEmitter.rate = this.psiLevel < 9 ?
-        new Proton.Rate(new Proton.Span(20+this.psiLevel*8, 25+this.psiLevel*12), this.psiLevel*0.25) :
+        new Proton.Rate(new Proton.Span(20+this.psiLevel*5, 25+this.psiLevel*8), this.psiLevel*0.25) :
         new Proton.Rate(new Proton.Span(150, 180), 4)
-        this.psiEmitter.emit('once')
+        this.psiEmission();
       }
       this.drawStructures();
       for (let planet of bodies) {
@@ -974,8 +1019,8 @@ class GameCanvas extends React.Component {
           }
         }
       }
-      if (this.mouseTick % 40 == 0) {
-        this.clickEmitter.emit('once');
+      if (this.mouseTick % 15 == 0) {
+        this.clickEmission()
       }
       if (this.mousedownevent == false) {
         //once per click
@@ -996,6 +1041,25 @@ class GameCanvas extends React.Component {
     }
   }
 
+  clickEmission() {
+    this.clickEmitter.p.x = this.props.mouseObj.x;
+    this.clickEmitter.p.y = this.props.mouseObj.y;
+    this.clickEmitter.pointAttraction.reset(this.props.ball, 20, 600)
+    this.clickEmitter.emitDirection = Victor(this.props.ball.x-this.props.mouseObj.x, this.props.ball.y-this.props.mouseObj.y).verticalAngleDeg();
+    this.clickEmitter.currVelocity.reset(new Proton.Span(2,3), new Proton.Span((this.clickEmitter.emitDirection-22.5+360)%360, (this.clickEmitter.emitDirection+22.5+360)%360), 'polar');
+    this.clickEmitter.emit('once');
+  }
+
+  psiEmission() {
+    this.psiEmitter.p.x = this.props.ball.x;
+    this.psiEmitter.p.y = this.props.ball.y;
+    this.psiEmitter.planetAttraction.reset(this.props.world.bodies[0], 25, 700);
+    this.psiEmitter.emitDirection = Victor(this.props.ball.x-this.protonCanvas.width/2, this.props.ball.y-this.protonCanvas.height/2).verticalAngleDeg();
+    this.psiEmitter.currVelocity.reset(new Proton.Span(2,3), new Proton.Span((this.psiEmitter.emitDirection-15+360)%360, (this.psiEmitter.emitDirection+15+360)%360,), 'polar');
+    this.psiEmitter.emit('once');
+    // console.log(this.psiEmitter)
+  }
+
   updateWorld() {
     this.updateEmitters();
   }
@@ -1003,26 +1067,18 @@ class GameCanvas extends React.Component {
   updateEmitters(x) {
     const bodies = this.props.world.bodies;
     for (let em of this.emitterList) {
-      if (em.planetAttraction) {
-        em.planetAttraction.reset(em.target, 20, 500);
+      if (em.target) {
+        em.p.x = em.target.x;
+        em.p.y = em.target.y;
       }
-    }
-    if (this.psiEmitter) {
-      this.psiEmitter.p.x = this.props.mouseObj.x;
-      this.psiEmitter.p.y = this.props.mouseObj.y;
-      this.psiEmitter.planetAttraction.reset(bodies[0], 25, 700)
-    }
-    if (this.clickEmitter) {
-      this.clickEmitter.p.x = this.props.ball.x;
-      this.clickEmitter.p.y = this.props.ball.y;
-      this.clickEmitter.pointAttraction.reset(this.props.ball, 10, 500)
+      if (em.planetAttraction) {
+        em.planetAttraction.reset(em.target, 15, 500);
+      }
     }
   }
 
   drawConnect(origin, target) {
     this.ctx.beginPath();
-    this.ctx.shadowBlur = 20;
-    this.ctx.shadowColor = '#4599DE';
     this.ctx.globalAlpha = 0.5
     this.ctx.strokeStyle = '#4397DC';
     this.ctx.lineWidth = 1;
@@ -1075,7 +1131,6 @@ class GameCanvas extends React.Component {
     this.ctx.beginPath();
     p.orbitX!==p.orbitY ?
     this.ctx.ellipse(p.xPar, p.yPar, p.orbitX, p.orbitY, p.rot/360*(Math.PI*2), 0, Math.PI * 2, true) :
-    // this.ctx.ellipse(p.pf.x, p.pf.y, p.orbitX, p.orbitY, p.rot, 0, Math.PI * 2, true) :
     this.ctx.arc(p.xPar, p.yPar, p.orbitX, 0, Math.PI * 2, false);
     this.ctx.lineWidth = 2;
     this.ctx.globalAlpha = 0.4;
@@ -1112,11 +1167,13 @@ class GameCanvas extends React.Component {
       this.ctx.shadowBlur = seg.glow*10;
       this.ctx.shadowColor = shadeColor(seg.hue, 10);
     }
+    this.ctx.globalAlpha = seg.health*0.33;
     this.ctx.arc(seg.origin.x, seg.origin.y, seg.r, seg.a, seg.b, false);
     this.ctx.lineWidth = seg.width;
     this.ctx.strokeStyle = seg.hue;
     this.ctx.stroke();
     this.ctx.closePath();
+    this.ctx.globalAlpha = 1;
     this.ctx.shadowBlur = 0;
     this.ctx.shadowColor = 0;
   }
@@ -1225,7 +1282,7 @@ class MyApp extends React.Component {
   }
   render() {
     return (
-      <ErrorBoundary><OrbitGame width="700" height="700"/></ErrorBoundary>
+      <OrbitGame width="700" height="700"/>
     )
   }
 }
