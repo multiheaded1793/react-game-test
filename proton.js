@@ -4272,7 +4272,6 @@ var CanvasRenderer = function (_BaseRenderer) {
         classCallCheck(this, CanvasRenderer);
 
         var _this = possibleConstructorReturn(this, (CanvasRenderer.__proto__ || Object.getPrototypeOf(CanvasRenderer)).call(this, element));
-				console.log(_this);
         _this.stroke = null;
         _this.context = _this.element.getContext('2d');
         _this.bufferCache = {};
